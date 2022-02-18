@@ -1,10 +1,15 @@
+<meta name="referrer" content="no-referrer" />
 <template>
   <div>
     <basic-container>
       <avue-form :option="option"
                  v-model="form"
                  @tab-click="handleTabClick"
-                 @submit="handleSubmit"></avue-form>
+                 @submit="handleSubmit" id="pdfDom">
+        <template slot-scope="scope" slot="menuForm" type="primary">
+          <el-button @click="getPdf">打印</el-button>
+        </template>
+      </avue-form>
     </basic-container>
   </div>
 </template>
@@ -13,14 +18,15 @@
 import option from "@/const/user/info";
 import {getUserInfo, update, updatePassword} from "@/api/system/user";
 import func from "@/util/func";
-
+import htmlToPdf from '@/components/utils/htmlToPdf'
 
 export default {
   data() {
     return {
       index: 0,
       option: option,
-      form: {}
+      form: {},
+      htmlTitle: '个人信息',
     };
   },
   created() {
@@ -29,6 +35,7 @@ export default {
   methods: {
     handleSubmit(form, done) {
       if (this.index === 0) {
+        console.log(form);
         update(form).then(res => {
           if (res.data.success) {
             this.$message({
@@ -66,6 +73,9 @@ export default {
         })
       }
     },
+    getPdf () {
+      htmlToPdf.downloadPDF(document.querySelector('#pdfDom'), this.htmlTitle)
+    },
     handleWitch() {
       if (this.index === 0) {
         getUserInfo().then(res => {
@@ -75,8 +85,13 @@ export default {
             avatar: user.avatar,
             name: user.name,
             realName: user.realName,
+            roleName: user.roleName,
+            deptName: user.deptName,
             phone: user.phone,
             email: user.email,
+            status: user.status,
+            companyName: user.companyName,
+            companyAddress: user.companyAddress,
           }
         });
       }

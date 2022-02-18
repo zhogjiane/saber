@@ -253,7 +253,7 @@
               }]
             },
             {
-              label: "所属部门",
+              label: "所属教师",
               prop: "deptId",
               type: "tree",
               multiple: true,
@@ -265,7 +265,7 @@
               checkStrictly: true,
               rules: [{
                 required: true,
-                message: "请选择所属部门",
+                message: "请选择所属教师",
                 trigger: "click"
               }]
             },
@@ -273,23 +273,6 @@
               label: "用户编号",
               prop: "code",
               hide: true,
-            },
-            {
-              label: "所属岗位",
-              prop: "postId",
-              type: "tree",
-              multiple: true,
-              dicData: [],
-              hide: true,
-              props: {
-                label: "postName",
-                value: "id"
-              },
-              rules: [{
-                required: true,
-                message: "请选择所属岗位",
-                trigger: "click"
-              }],
             },
             {
               label: "手机号码",

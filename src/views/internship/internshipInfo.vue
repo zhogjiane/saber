@@ -3,13 +3,14 @@
     <avue-crud :option="option"
                :table-loading="loading"
                :data="data"
-               ref="crud"
-               v-model="form"
+               :page="page"
                :permission="permissionList"
                :before-open="beforeOpen"
-               @row-del="rowDel"
+               v-model="form"
+               ref="crud"
                @row-update="rowUpdate"
                @row-save="rowSave"
+               @row-del="rowDel"
                @search-change="searchChange"
                @search-reset="searchReset"
                @selection-change="selectionChange"
@@ -17,22 +18,12 @@
                @size-change="sizeChange"
                @on-load="onLoad">
       <template slot="menuLeft">
-        <el-button type="danger"
-                   size="small"
-                   icon="el-icon-delete"
-                   v-if="permission.dept_delete"
-                   plain
-                   @click="handleDelete">删 除
-        </el-button>
       </template>
       <template slot-scope="scope" slot="menu">
-        <el-button
-          type="text"
-          icon="el-icon-circle-plus-outline"
-          size="small"
-          @click.stop="handleAdd(scope.row,scope.index)"
-          v-if="userInfo.authority.includes('admin')"
-        >新增子项
+        <el-button type="text"
+                   size="small"
+                   icon="el-icon-download"
+                   @click="fileDownload(scope.row)">附件下载
         </el-button>
       </template>
     </avue-crud>
@@ -40,122 +31,105 @@
 </template>
 
 <script>
-  import {add, getDept, getDeptTree, getList, remove, update} from "@/api/system/dept";
+  import {getList} from "@/api/internship/internshipInfo";
   import {mapGetters} from "vuex";
-  import website from '@/config/website';
 
   export default {
     data() {
       return {
-        form: {},
-        selectionList: [],
-        loading: true,
+        form: {
+          id:'',
+          internshipFileName:'',
+          companyName:'',
+          companyAddress:'',
+          createUser:'',
+          createDept:'',
+          createTime:'',
+          updateUser:'',
+          updateTime:'',
+          status:'',
+          isDeleted:'',
+          remark:''
+        },
         query: {},
+        loading: true,
         page: {
           pageSize: 10,
           currentPage: 1,
           total: 0
         },
+        selectionList: [],
         option: {
+          height: 'auto',
+          calcHeight: 210,
           searchShow: true,
           searchMenuSpan: 6,
           tip: false,
-          tree: true,
           border: true,
           index: true,
-          selection: true,
+          addBtn:false,
+          delBtn:false,
+          editBtn:false,
           viewBtn: true,
-          menuWidth: 300,
+          selection: true,
           column: [
             {
-              label: "名称",
-              prop: "deptName",
-              search: true,
-              rules: [{
-                required: true,
-                message: "请输入名称",
-                trigger: "blur"
-              }]
+              label: "姓名",
+              prop: "name",
             },
-/*            {
-              label: "所属租户",
-              prop: "tenantId",
-              type: "tree",
-              dicUrl: "/api/blade-system/tenant/select",
-              addDisplay: false,
-              editDisplay: false,
-              viewDisplay: website.tenantMode,
-              span: 24,
+            {
+              label: "实习状态",
+              prop: "status",
+              type: "select",
+              dicUrl: "/api/blade-system/dict/dictionary?code=internship_status",
               props: {
-                label: "tenantName",
-                value: "tenantId"
+                label: "dictValue",
+                value: "dictKey"
               },
-              hide: !website.tenantMode,
-              search: website.tenantMode,
-              rules: [{
-                required: true,
-                message: "请输入所属租户",
-                trigger: "click"
-              }]
-            },*/
-            {
-              label: "全称",
-              prop: "fullName",
-              rules: [{
-                required: true,
-                message: "请输入全称",
-                trigger: "blur"
-              }]
+              dataType: "number",
+              slot: true,
             },
             {
-              label: "上级部门",
-              prop: "parentId",
-              dicData: [],
-              type: "tree",
-              hide: true,
+              label: "实习公司",
+              prop: "companyname",
+            },
+            {
+              label: "实习地址",
+              prop: "companyaddress",
+            },
+            {
+              label: "邮箱",
+              prop: "email",
+            },
+            {
+              label: "手机",
+              prop: "phone",
+            },
+            {
+              label: "所属教师",
+              prop: "deptId",
+              type: "select",
+              dicUrl: "/api/blade-system/dept/getAllTeacher",
               props: {
-                label: "title"
+                label: "deptName",
+                value: "id"
               },
-              rules: [{
-                required: false,
-                message: "请选择上级部门",
-                trigger: "click"
-              }]
+              slot: true,
             },
-            {
-              label: "排序",
-              prop: "sort",
-              type: "number",
-              rules: [{
-                required: true,
-                message: "请输入排序",
-                trigger: "blur"
-              }]
-            },
-            {
-              label: "备注",
-              prop: "remark",
-              span: 24,
-              hide: true,
-              rules: [{
-                required: false,
-                message: "请输入备注",
-                trigger: "blur"
-              }]
-            }
+
           ]
         },
         data: []
       };
     },
     computed: {
-      ...mapGetters(["userInfo", "permission"]),
+      ...mapGetters(["permission"]),
       permissionList() {
         return {
-          addBtn: this.vaildData(this.permission.dept_add, false),
-          viewBtn: this.vaildData(this.permission.dept_view, false),
-          delBtn: this.vaildData(this.permission.dept_delete, false),
-          editBtn: this.vaildData(this.permission.dept_edit, false)
+          addBtn: this.vaildData(this.permission.internshipfilesubmit_add, false),
+          viewBtn: this.vaildData(this.permission.internshipfilesubmit_view, false),
+          delBtn: this.vaildData(this.permission.internshipfilesubmit_delete, false),
+          editBtn: this.vaildData(this.permission.internshipfilesubmit_edit, false)
         };
       },
       ids() {
@@ -167,17 +141,8 @@
       }
     },
     methods: {
-      handleAdd(row) {
-        this.$refs.crud.value.parentId = row.id;
-        this.$refs.crud.option.column.filter(item => {
-          if (item.prop === "parentId") {
-            item.value = row.id;
-            item.addDisabled = true;
-          }
-        });
-        this.$refs.crud.rowAdd();
-      },
       rowSave(row, done, loading) {
+        //row.filePath = row.filePath[0].value;
         add(row).then(() => {
           done();
           this.onLoad(this.page);
@@ -191,6 +156,7 @@
         });
       },
       rowUpdate(row, index, done, loading) {
+        //row.filePath = row.filePath[0].value;
         update(row).then(() => {
           done();
           this.onLoad(this.page);
@@ -220,6 +186,18 @@
             });
           });
       },
+      fileDownload(row) {
+        console.log(row);
+        const filePath = row.filePath;
+        this.$confirm("确定下载附件?", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning"
+        })
+          .then(() => {
+            this.downFile(filePath);
+          })
+      },
       handleDelete() {
         if (this.selectionList.length === 0) {
           this.$message.warning("请选择至少一条数据");
@@ -242,6 +220,14 @@
             this.$refs.crud.toggleSelection();
           });
       },
+      beforeOpen(done, type) {
+        if (["edit", "view"].includes(type)) {
+          getDetail(this.form.id).then(res => {
+            this.form = res.data.data;
+          });
+        }
+        done();
+      },
       searchReset() {
         this.query = {};
         this.onLoad(this.page);
@@ -255,13 +241,9 @@
       selectionChange(list) {
         this.selectionList = list;
       },
-      beforeOpen(done, type) {
-        if (["edit", "view"].includes(type)) {
-          getDept(this.form.id).then(res => {
-            this.form = res.data.data;
-          });
-        }
-        done();
+      selectionClear() {
+        this.selectionList = [];
+        this.$refs.crud.toggleSelection();
       },
       currentChange(currentPage){
         this.page.currentPage = currentPage;
@@ -271,13 +253,12 @@
       },
       onLoad(page, params = {}) {
         this.loading = true;
-        getList(page.currentPage, page.pageSize, Object.assign(params, this.query)).then(res => {
-          this.data = res.data.data;
+        getList(page.currentPage, page.pageSize, Object.assign(params, this.query),this.$store.getters.userInfo.userId).then(res => {
+          const data = res.data.data;
+          this.page.total = data.total;
+          this.data = data.records;
           this.loading = false;
-          getDeptTree().then(res => {
-            const column = this.findObject(this.option.column, "parentId");
-            column.dicData = res.data.data;
-          });
+          this.selectionClear();
         });
       }
     }

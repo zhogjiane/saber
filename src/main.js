@@ -5,6 +5,7 @@ import App from './App';
 import router from './router/router';
 import './permission'; // 权限
 import './error'; // 日志
+import htmlToPdf from '@/components/utils/htmlToPdf';//将页面导出为PDF
 import store from './store';
 import {loadStyle} from './util/util'
 import * as urls from '@/config/env';
@@ -19,6 +20,7 @@ import './styles/common.scss';
 import basicContainer from './components/basic-container/main'
 import thirdRegister from './components/third-register/main'
 
+Vue.use(htmlToPdf)
 Vue.use(router)
 Vue.use(VueAxios, axios)
 Vue.use(Element, {
