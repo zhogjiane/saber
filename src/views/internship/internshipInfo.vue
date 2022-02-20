@@ -22,21 +22,45 @@
       <template slot-scope="scope" slot="menu">
         <el-button type="text"
                    size="small"
-                   icon="el-icon-download"
-                   @click="fileDownload(scope.row)">附件下载
+                   icon="el-icon-edit"
+                   @click="updateSubmitStatus(scope.row.id,3)">退回
+        </el-button>
+        <el-button type="text"
+                   size="small"
+                   icon="el-icon-edit"
+                   @click="openDialog(scope.row.id)">通过
         </el-button>
       </template>
     </avue-crud>
+    <template>
+      <el-dialog title="实习打分" :visible.sync="dialogVisible" :close-on-click-modal="true" :modal="true" :show-close="true" :center="true">
+        <avue-form :option="gradesOption" v-model="gradesForm">
+          <template slot-scope="scope" slot="menuForm">
+            <el-button type="primary"
+                       size="small"
+                       @click="updateSubmitStatus1(4)">确定
+            </el-button>
+            <el-button size="small"
+                       @click="dialogVisible = false">取消
+            </el-button>
+          </template>
+        </avue-form>
+      </el-dialog>
+    </template>
   </basic-container>
 </template>
 
 <script>
-  import {getList} from "@/api/internship/internshipInfo";
+  import {getList, getDetail} from "@/api/internship/internshipInfo";
   import {mapGetters} from "vuex";
+  import {update} from "@/api/system/user";
 
   export default {
     data() {
       return {
+        userId:'',
+        grades:'',
+        dialogVisible:false,
         form: {
           id:'',
           internshipFileName:'',
@@ -50,6 +74,9 @@
           status:'',
           isDeleted:'',
           remark:''
+        },
+        gradesForm: {
+          grades:'',
         },
         query: {},
         loading: true,
@@ -91,11 +118,11 @@
             },
             {
               label: "实习公司",
-              prop: "companyname",
+              prop: "companyName",
             },
             {
               label: "实习地址",
-              prop: "companyaddress",
+              prop: "companyAddress",
             },
             {
               label: "邮箱",
@@ -117,6 +144,24 @@
               slot: true,
             },
 
+          ]
+        },
+        gradesOption: {
+          height: 'auto',
+          calcHeight: 210,
+          searchShow: true,
+          searchMenuSpan: 6,
+          tip: false,
+          border: true,
+          index: true,
+          emptyBtn: false,
+          submitBtn: false,
+          column: [
+            {
+              label: "实习成绩",
+              prop: "grades",
+              span:24,
+            },
           ]
         },
         data: []
@@ -186,17 +231,66 @@
             });
           });
       },
-      fileDownload(row) {
-        console.log(row);
-        const filePath = row.filePath;
-        this.$confirm("确定下载附件?", {
-          confirmButtonText: "确定",
-          cancelButtonText: "取消",
-          type: "warning"
+      openDialog(id){
+        this.dialogVisible = true;
+        this.userId = id;
+      },
+      updateSubmitStatus(id,status) {
+        const form = {};
+        form.id = id;
+        form.submitStatus = status;
+        if(this.gradesForm.grades){
+          form.grades = this.gradesForm.grades;
+        }else{
+          form.grades = 0;
+        }
+        update(form).then(res => {
+          if (res.data.success) {
+            this.$message({
+              type: "success",
+              message: "提交成功!",
+            });
+            this.onLoad(this.page);
+          } else {
+            this.$message({
+              type: "error",
+              message: res.data.msg
+            });
+          }
+          done();
+        }, error => {
+          window.console.log(error);
+          done();
         })
-          .then(() => {
-            this.downFile(filePath);
-          })
+      },
+      updateSubmitStatus1(status) {
+        const form = {};
+        form.id = this.userId;
+        form.submitStatus = status;
+        if(this.gradesForm.grades){
+          form.grades = this.gradesForm.grades;
+        }else{
+          form.grades = 0;
+        }
+        update(form).then(res => {
+          if (res.data.success) {
+            this.$message({
+              type: "success",
+              message: "提交成功!",
+            });
+            this.dialogVisible = false;
+            this.onLoad(this.page);
+          } else {
+            this.$message({
+              type: "error",
+              message: res.data.msg
+            });
+          }
+          done();
+        }, error => {
+          window.console.log(error);
+          done();
+        })
       },
       handleDelete() {
         if (this.selectionList.length === 0) {

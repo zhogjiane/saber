@@ -13,3 +13,13 @@ export const getList = (current, size, params, userId) => {
   })
 }
 
+export const getDetail = (id) => {
+  return request({
+    url: '/api/blade-user/detail',
+    method: 'get',
+    params: {
+      id,
+    }
+  })
+}
+

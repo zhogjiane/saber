@@ -35,7 +35,7 @@ export default {
   methods: {
     handleSubmit(form, done) {
       if (this.index === 0) {
-        console.log(form);
+        form.submitStatus = 2;
         update(form).then(res => {
           if (res.data.success) {
             this.$message({
