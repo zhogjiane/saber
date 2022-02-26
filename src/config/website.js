@@ -3,11 +3,11 @@
  */
 export default {
   title: "saber",
-  indexTitle: 'Saber Admin',
+  indexTitle: '总 览',
   clientId: 'saber', // 客户端id
   clientSecret: 'saber_secret', // 客户端密钥
-  tenantMode: true, // 是否开启租户模式
-  captchaMode: true, // 是否开启验证码模式
+  tenantMode: false, // 是否开启租户模式
+  captchaMode: false, // 是否开启验证码模式
   logo: "S",
   key: 'saber',//配置主键,目前用于存储
   lockPage: '/lock',
@@ -29,7 +29,7 @@ export default {
   },
   //配置菜单的属性
   menu: {
-    iconDefault: 'iconfont icon-caidan',
+    iconDefault: 'iconfont iconicon_im_voice',
     props: {
       label: 'name',
       path: 'path',

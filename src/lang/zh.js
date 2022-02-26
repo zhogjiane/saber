@@ -1,6 +1,6 @@
 export default {
   tip: '提示',
-  title: 'Saber企业级开发平台',
+  title: '开发平台',
   logoutTip: '退出系统, 是否继续?',
   submitText: '确定',
   cancelText: '取消',
@@ -60,7 +60,7 @@ export default {
     data: '数据展示',
     permission: '权限',
     error: '异常页面',
-    test: '测试页面'
+    
   },
   login: {
     title: '登录 ',
