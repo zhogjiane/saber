@@ -23,3 +23,11 @@ export const getDetail = (id) => {
   })
 }
 
+export const addMessage = (row) => {
+  return request({
+    url: '/api/blade-message/messages/submit',
+    method: 'post',
+    data: row
+  })
+}
+

@@ -1,5 +1,17 @@
 import request from '@/router/axios';
 
+export const getMessagesList = (current, size, params, toUserId) => {
+  return request({
+    url: '/api/blade-message/messages/messagePage',
+    method: 'get',
+    params: {
+      ...params,
+      current,
+      size,
+      toUserId,
+    }
+  })
+}
 export const getList = (current, size, params) => {
   return request({
     url: '/api/blade-user/list',

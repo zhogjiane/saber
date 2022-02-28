@@ -16,6 +16,7 @@
                @selection-change="selectionChange"
                @current-change="currentChange"
                @size-change="sizeChange"
+               @refresh-change="refreshChange"
                @on-load="onLoad">
       <template slot="menuLeft">
       </template>
@@ -23,12 +24,26 @@
         <el-button type="text"
                    size="small"
                    icon="el-icon-edit"
-                   @click="updateSubmitStatus(scope.row.id,3)">退回
+                   v-if="scope.row.submitStatus === 2"
+                   @click="updateSubmitStatus(scope.row,3)">退回
         </el-button>
         <el-button type="text"
                    size="small"
                    icon="el-icon-edit"
+                   v-if="scope.row.submitStatus === 2 && (userInfo.authority.includes('teacher')||userInfo.authority.includes('administrator'))"
                    @click="openDialog(scope.row.id)">通过
+        </el-button>
+        <el-button type="text"
+                   size="small"
+                   icon="el-icon-edit"
+                   v-if="scope.row.submitStatus === 4 && (userInfo.authority.includes('secretary')||userInfo.authority.includes('administrator'))"
+                   @click="updateSubmitStatus2(scope.row.id,5)">通过
+        </el-button>
+        <el-button type="text"
+                   size="small"
+                   icon="el-icon-edit"
+                   v-if="scope.row.submitStatus === 5 && (userInfo.authority.includes('director')||userInfo.authority.includes('administrator'))"
+                   @click="updateSubmitStatus2(scope.row.id,6)">通过
         </el-button>
       </template>
     </avue-crud>
@@ -51,11 +66,12 @@
 </template>
 
 <script>
-  import {getList, getDetail} from "@/api/internship/internshipInfo";
+import {getList, getDetail, addMessage} from "@/api/internship/internshipInfo";
   import {mapGetters} from "vuex";
   import {update} from "@/api/system/user";
+import { uuid } from 'vue-uuid';
 
-  export default {
+export default {
     data() {
       return {
         userId:'',
@@ -100,6 +116,17 @@
           viewBtn: true,
           selection: true,
           column: [
+            {
+              label: "状态",
+              prop: "submitStatus",
+              type: "radio",
+              dicUrl: "/api/blade-system/dict/dictionary?code=submitStatus",
+              props: {
+                label: "dictValue",
+                value: "dictKey"
+              },
+              dataType: "number",
+            },
             {
               label: "姓名",
               prop: "name",
@@ -168,7 +195,7 @@
       };
     },
     computed: {
-      ...mapGetters(["permission"]),
+      ...mapGetters(["userInfo", "permission"]),
       permissionList() {
         return {
           addBtn: this.vaildData(this.permission.internshipfilesubmit_add, false),
@@ -235,9 +262,9 @@
         this.dialogVisible = true;
         this.userId = id;
       },
-      updateSubmitStatus(id,status) {
+      updateSubmitStatus(row,status) {
         const form = {};
-        form.id = id;
+        form.id = row.id;
         form.submitStatus = status;
         if(this.gradesForm.grades){
           form.grades = this.gradesForm.grades;
@@ -251,6 +278,15 @@
               message: "提交成功!",
             });
             this.onLoad(this.page);
+            //增加通知信息
+            const message = '实习信息退回！';
+            const userId = this.$store.getters.userInfo.userId;
+            const toUserId = row.id;
+            const messageForm = {};
+            messageForm.userId = userId;
+            messageForm.toUserId = toUserId;
+            messageForm.message = message;
+            addMessage(messageForm);
           } else {
             this.$message({
               type: "error",
@@ -266,6 +302,35 @@
       updateSubmitStatus1(status) {
         const form = {};
         form.id = this.userId;
+        form.submitStatus = status;
+        if(this.gradesForm.grades){
+          form.grades = this.gradesForm.grades;
+        }else{
+          form.grades = 0;
+        }
+        update(form).then(res => {
+          if (res.data.success) {
+            this.$message({
+              type: "success",
+              message: "提交成功!",
+            });
+            this.dialogVisible = false;
+            this.onLoad(this.page);
+          } else {
+            this.$message({
+              type: "error",
+              message: res.data.msg
+            });
+          }
+          done();
+        }, error => {
+          window.console.log(error);
+          done();
+        })
+      },
+      updateSubmitStatus2(userId,status) {
+        const form = {};
+        form.id = userId;
         form.submitStatus = status;
         if(this.gradesForm.grades){
           form.grades = this.gradesForm.grades;
@@ -345,8 +410,12 @@
       sizeChange(pageSize){
         this.page.pageSize = pageSize;
       },
+      refreshChange() {
+        this.onLoad(this.page, this.query);
+      },
       onLoad(page, params = {}) {
         this.loading = true;
+        console.log(this.$store.getters);
         getList(page.currentPage, page.pageSize, Object.assign(params, this.query),this.$store.getters.userInfo.userId).then(res => {
           const data = res.data.data;
           this.page.total = data.total;

@@ -15,22 +15,16 @@
                @search-reset="searchReset"
                @selection-change="selectionChange"
                @current-change="currentChange"
+               @refresh-change="refreshChange"
                @size-change="sizeChange"
-               :upload-after="uploadAfter"
                @on-load="onLoad">
       <template slot="menuLeft">
         <el-button type="danger"
                    size="small"
                    icon="el-icon-delete"
                    plain
+                   v-if="permission.messages_delete"
                    @click="handleDelete">删 除
-        </el-button>
-      </template>
-      <template slot-scope="scope" slot="menu">
-        <el-button type="text"
-                   size="small"
-                   icon="el-icon-download"
-                   @click="fileDownload(scope.row)">附件下载
         </el-button>
       </template>
     </avue-crud>
@@ -38,8 +32,7 @@
 </template>
 
 <script>
-  import {getList, getDetail, add, update, remove} from "@/api/internship/internshipfilesubmit";
-  import * as fileMessage from "@/api/file/filemessage";
+  import {getList, getDetail, add, update, remove} from "@/api/message/messages";
   import {mapGetters} from "vuex";
 
   export default {
@@ -47,9 +40,9 @@
       return {
         form: {
           id:'',
-          internshipFileName:'',
-          companyName:'',
-          companyAddress:'',
+          message:'',
+          userId:'',
+          toUserId:'',
           createUser:'',
           createDept:'',
           createTime:'',
@@ -57,7 +50,6 @@
           updateTime:'',
           status:'',
           isDeleted:'',
-          remark:''
         },
         query: {},
         loading: true,
@@ -79,124 +71,142 @@
           selection: true,
           column: [
             {
-              label: "材料名称",
-              prop: "internshipFileName",
+              label: "ID",
+              prop: "id",
               rules: [{
                 required: true,
-                message: "请输入材料名称",
+                message: "请输入ID",
                 trigger: "blur"
-              }]
+              }],
+              hide:true,
+              display:false,
             },
             {
-              label: "实习公司",
-              prop: "companyname",
+              label: "通知",
+              prop: "message",
               rules: [{
                 required: true,
-                message: "请输入实习公司",
+                message: "请输入通知",
                 trigger: "blur"
-              }]
+              }],
+              row:true,
+              span:24,
+              type:'textarea'
             },
             {
-              label: "实习地址",
-              prop: "companyaddress",
-              rules: [{
-                required: true,
-                message: "请输入实习地址",
-                trigger: "blur"
-              }]
-            },
-            {
-              label: "提交人",
-              prop: "createUser",
-              type: "select",
+              label: "通知人",
+              prop: "userId",
               dicUrl: "/api/blade-user/getAllUser",
+              type: "select",
+              slot: true,
               props: {
                 label: "name",
                 value: "id"
               },
-              dataType: "number",
-              slot: true,
               rules: [{
                 required: true,
-                message: "请输入提交人",
+                message: "请输入通知人",
                 trigger: "blur"
-              }],
+              }]
             },
             {
-              label: "所属教师",
-              prop: "deptId",
+              label: "接收人",
+              prop: "toUserId",
+              dicUrl: "/api/blade-user/getAllToUser",
               type: "select",
-              dicUrl: "/api/blade-system/dept/getAllTeacher",
+              slot: true,
               props: {
-                label: "deptName",
+                label: "name",
                 value: "id"
               },
-              slot: true,
               rules: [{
                 required: true,
-                message: "请选择所属教师",
-                trigger: "click"
+                message: "请输入接收人",
+                trigger: "blur"
               }]
             },
             {
-              label: "实习状态",
-              prop: "status",
-              type: "select",
-              dicUrl: "/api/blade-system/dict/dictionary?code=internship_status",
-              props: {
-                label: "dictValue",
-                value: "dictKey"
-              },
-              dataType: "number",
-              slot: true,
+              label: "知晓率",
+              prop: "percentage",
+              display:false,
+            },
+            {
+              label: "创建人",
+              prop: "createUser",
               rules: [{
                 required: true,
-                message: "请选择实习状态",
+                message: "请输入创建人",
                 trigger: "blur"
               }],
+              hide:true,
+              display:false,
             },
             {
-              label: "备注",
-              prop: "remark",
-              row: true,
-              span: 24,
+              label: "创建部门",
+              prop: "createDept",
               rules: [{
                 required: true,
-                message: "请输入备注",
+                message: "请输入创建部门",
                 trigger: "blur"
-              }]
+              }],
+              hide:true,
+              display:false,
             },
             {
-              label: '附件上传',
-              prop: 'filePath',
-              type: 'upload',
-              loadText: '附件上传中，请稍等',
-              span: 24,
-              limit:'1',
-              propsHttp: {
-                res: 'data',
-                url: 'link',
-                name: 'originalName',
-              },
-              action: '/api/blade-resource/oss/endpoint/put-file',
+              label: "创建时间",
+              prop: "createTime",
+              rules: [{
+                required: true,
+                message: "请输入创建时间",
+                trigger: "blur"
+              }],
               hide:true,
+              display:false,
             },
-            /*{
-              label: '附件上传',
-              type: 'upload',
-              propsHttp: {
-                res: 'data',
-                url: 'link',
-              },
-              canvasOption: {
-                text: 'blade',
-                ratio: 0.1
-              },
-              action: '/api/blade-resource/oss/endpoint/put-file',
-              span: 12,
-              row: true,
-              prop: 'filePath'
-            },*/
+            {
+              label: "修改人",
+              prop: "updateUser",
+              rules: [{
+                required: true,
+                message: "请输入修改人",
+                trigger: "blur"
+              }],
+              hide:true,
+              display:false,
+            },
+            {
+              label: "修改时间",
+              prop: "updateTime",
+              rules: [{
+                required: true,
+                message: "请输入修改时间",
+                trigger: "blur"
+              }],
+              hide:true,
+              display:false,
+            },
+            {
+              label: "状态",
+              prop: "status",
+              rules: [{
+                required: true,
+                message: "请输入状态",
+                trigger: "blur"
+              }],
+              hide:true,
+              display:false,
+            },
+            {
+              label: "是否已删除",
+              prop: "isDeleted",
+              rules: [{
+                required: true,
+                message: "请输入是否已删除",
+                trigger: "blur"
+              }],
+              hide:true,
+              display:false,
+            },
           ]
         },
         data: []
@@ -206,10 +216,10 @@
       ...mapGetters(["permission"]),
       permissionList() {
         return {
-          addBtn: this.vaildData(this.permission.internshipfilesubmit_add, false),
-          viewBtn: this.vaildData(this.permission.internshipfilesubmit_view, false),
-          delBtn: this.vaildData(this.permission.internshipfilesubmit_delete, false),
-          editBtn: this.vaildData(this.permission.internshipfilesubmit_edit, false)
+          addBtn: this.vaildData(this.permission.messages_add, false),
+          viewBtn: this.vaildData(this.permission.messages_view, false),
+          delBtn: this.vaildData(this.permission.messages_delete, false),
+          editBtn: this.vaildData(this.permission.messages_edit, false)
         };
       },
       ids() {
@@ -222,7 +232,6 @@
     },
     methods: {
       rowSave(row, done, loading) {
-        row.filePath = row.filePath[0].value;
         add(row).then(() => {
           done();
           this.onLoad(this.page);
@@ -236,7 +245,6 @@
         });
       },
       rowUpdate(row, index, done, loading) {
-        row.filePath = row.filePath[0].value;
         update(row).then(() => {
           done();
           this.onLoad(this.page);
@@ -265,18 +273,6 @@
               message: "操作成功!"
             });
           });
-      },
-      fileDownload(row) {
-        console.log(row);
-        const filePath = row.filePath;
-        this.$confirm("确定下载附件?", {
-          confirmButtonText: "确定",
-          cancelButtonText: "取消",
-          type: "warning"
-        })
-          .then(() => {
-            this.downFile(filePath);
-          })
       },
       handleDelete() {
         if (this.selectionList.length === 0) {
@@ -331,13 +327,8 @@
       sizeChange(pageSize){
         this.page.pageSize = pageSize;
       },
-      uploadAfter(res, done, loading){
-        console.log(res);
-        const form = {};
-        form.fileName = res.originalName;
-        form.fileUrl = res.link;
-        fileMessage.update(form);
-        done();
+      refreshChange() {
+        this.onLoad(this.page, this.query);
       },
       onLoad(page, params = {}) {
         this.loading = true;

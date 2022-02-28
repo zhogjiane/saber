@@ -91,6 +91,7 @@ export default {
     screenfullF: '退出全屏',
     screenfull: '全屏',
     language: '中英文',
+    messages:'消息通知',
     theme: '主题',
     color: '换色'
   },
