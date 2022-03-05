@@ -401,7 +401,7 @@
       rowSave(row, done, loading) {
         row.deptId = row.deptId.join(",");
         row.roleId = row.roleId.join(",");
-        row.postId = row.postId.join(",");
+        // row.postId = row.postId.join(",");
         add(row).then(() => {
           done();
           this.onLoad(this.page);
@@ -417,7 +417,7 @@
       rowUpdate(row, index, done, loading) {
         row.deptId = row.deptId.join(",");
         row.roleId = row.roleId.join(",");
-        row.postId = row.postId.join(",");
+        // row.postId = row.postId.join(",");
         update(row).then(() => {
           done();
           this.onLoad(this.page);
