@@ -17,6 +17,7 @@
                @current-change="currentChange"
                @size-change="sizeChange"
                :upload-after="uploadAfter"
+               @refresh-change="refreshChange"
                @on-load="onLoad">
       <template slot="menuLeft">
         <el-button type="danger"
@@ -338,6 +339,9 @@
         form.fileUrl = res.link;
         fileMessage.update(form);
         done();
+      },
+      refreshChange() {
+        this.onLoad(this.page, this.query);
       },
       onLoad(page, params = {}) {
         this.loading = true;
