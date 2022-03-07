@@ -32,6 +32,12 @@
         </el-button>
       </template>
       <template slot-scope="scope" slot="menu">
+<!--        包装好的Excle导出按钮
+            json_fields--表头
+            json_data--数据
+            title--文件名
+            因为是材料模板，不需要数据，所以只关注表头即可
+-->
         <download-excel
           :data   = "json_data"
           :fields = "json_fields"
@@ -46,6 +52,9 @@
 
       </template>
     </avue-crud>
+<!--
+      利用插槽写新增模板的form表单
+-->
     <el-dialog :visible.sync="showModifyParametersVisible" title="新增模板" center customClass="customWidth" :before-close="closeDialog">
        <el-form ref="modifyParametersForm" :inline="true" :model="modifyParametersForm" >
          <el-row>
@@ -99,8 +108,8 @@
   import {getList, getDetail, add, update, remove} from "@/api/template/template";
   import {mapGetters} from "vuex";
   import Vue from 'vue'
+  //引用的JSON导出到Excle的包
   import JsonExcel from 'vue-json-excel'
-
   Vue.component('downloadExcel', JsonExcel)
   export default {
     data() {
@@ -115,6 +124,7 @@
         query: {},
         loading: true,
         showInput:'',
+        //弹框显隐控制
         showModifyParametersVisible:false,
         modifyParametersForm: {
           pvaId: '',
@@ -198,17 +208,21 @@
     },
     methods: {
       updateTitle(row){
+        //将查询到的JSON字符串转换成JSON对象
         const value = JSON.parse(row.templateValue);
         console.log(value);
+        //循环JSON对象，将字段名添加到提前定义好的变量json_fields中
         for(let i = 0; i<value.length; i++){
           const name = value[i].paramName;
           const paramValue = value[i].paramValue;
           this.$set(this.json_fields,name,paramValue);
           this.$set(this.json_data,paramValue,'');
         }
+        //修改导出文件的文件名
         this.title = row.templateName+".xls";
         console.log(this.json_fields);
       },
+      //添加表单字段方法
       addItem() {
         this.modifyParametersForm.params.push({
           paramName: '',
@@ -234,11 +248,14 @@
       },
       // 提交批量修改入参表单
       submitParameForm() {
+        //获取表单数据
         this.$refs.modifyParametersForm.validate((valid) => {
           if (valid) {
             console.log(this.modifyParametersForm);
             const data = {};
+            //模板名称
             data.templateName = this.modifyParametersForm.templateName;
+            //将除模板名称外的表单数据转换成JSON字符串，存储到数据库中
             data.templateValue = JSON.stringify(this.modifyParametersForm.params);
             add(data).then(() => {
               this.$message.success('新增成功！')
